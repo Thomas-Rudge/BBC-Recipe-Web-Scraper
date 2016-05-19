@@ -1,0 +1,155 @@
+<!doctype html>
+
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <title>BBC Recipe Search</title>
+  <script>
+  // This is the search function
+  var searchRecipes = function() {
+     var insertNewAnchor = function(htmlName, pageInfo) {
+        // Get the title from pageInfo
+        pageInfo = pageInfo.replace('", ', "', ");
+        pageInfo = pageInfo.replace("', '", "','");
+        pageInfo = pageInfo.split("','");
+        pageInfo = pageInfo[0].slice(1);
+        // Inserts a new link in the results div
+        resultDiv = document.getElementById('results_div');
+        html = '<a href="BBC_Food_Repo/' + htmlName + '.html" target="_blank">' + pageInfo + '</a>';
+        resultDiv.insertAdjacentHTML('beforeEnd', html);
+     };
+     // Clear the result screen before searching
+     resultDiv = document.getElementById('results_div');
+     resultDiv.innerHTML = '';
+     // Get the search terms
+     searchEle1   = document.getElementById('search_terms');
+     searchEle2   = document.getElementById('any_all');
+     searchTerms  = searchEle1.value;
+     searchAnyAll = searchEle2.value;
+     searchTerms = searchTerms.split(',');
+     // Get rid of empty terms (for when multiple commas ,,,, are entered)
+     var i;
+     for (i=searchTerms.length-1; i>=0; i--) {
+        if (searchTerms[i] === '') {
+           searchTerms.pop('');
+        }
+     }
+     // Get the search data from the undisplayed div
+     // The data is a list where every odd indexed item is a page address
+     // and every even indexed item is the key words for the page to the left of it
+     // e.g. [page1, page1 keys, page2, page2 keys...]
+     dataEle = document.getElementById('search_data');
+     searchData = dataEle.innerHTML;
+     searchData = searchData.split('~:]');
+     // If they just hit the search button bring back everything
+     // If your computer sucks this might hurt
+     if (searchTerms.toString() === '') {
+        for (var i=0; i<searchData.length; i++) {
+           if (i%2 === 0) {
+              insertNewAnchor(searchData[i], searchData[i+1]);
+           }
+        }
+     } else { // If "any" is selected
+        if (searchAnyAll === '0') {
+           for (var i=0; i<searchData.length; i++) {
+              if (i%2 === 1) { // It's keywords for searching
+                 for (var x=0; x<searchTerms.length; x++) {
+                    if (searchData[i].search(searchTerms[x].toUpperCase()) !== -1) {
+                       insertNewAnchor(searchData[i-1], searchData[i]);
+                       break // Because we only need to match a single term
+                    }
+                 }
+              }
+           }         
+        } else { // If "all" is selected
+           for (var i=0; i<searchData.length; i++) {
+              if (i%2 === 1) {
+                 var foundTerms = []; // Keep track of what we've found
+                 for (var x=0; x<searchTerms.length; x++) {
+                    if (searchData[i].search(searchTerms[x].toUpperCase()) !== -1) {
+                       foundTerms.push(searchTerms[x]);
+                    }
+                 }
+                 // If everything matches, link the page
+                 if (foundTerms.toString() === searchTerms.toString()) {
+                    insertNewAnchor(searchData[i-1], searchData[i]);
+                 }
+              }
+           }
+        }
+     }
+  };
+  </script>
+  <style>
+  body {
+    margin: 30px 15px 0px 15px;
+    background-color: #262626;
+  }
+    
+  h1 {
+    font-family: arial, sans-serif;
+    color: white;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.004);
+  }
+      
+  input {
+    width: 300px;
+  }
+      
+  a {
+    display: block;
+    padding: 10px;
+    padding-left: 30px;
+    font-family: arial, sans-serif;
+    font-size: 17px;
+    text-decoration: none;
+    color: #262626;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.004);
+   }
+
+  a:hover {
+    color: #AA3939;
+    font-weight: bold;
+  }
+      
+  #results_div {
+    background-color: white;
+    width: 100%;
+    min-height: 500px;
+    margin: 30px 0px 0px 0px;
+  }
+  
+  #info_div {
+    padding: 5px;
+    font-family: arial, sans-serif;
+    font-size: 13px;
+    color: #c2c2c2;
+  }
+  
+  #search_data {
+    display: none;
+  }
+  </style>
+</head>
+
+<body>
+  <h1>Recipe Search...</h1>
+  <div id=search_div>
+    <div>
+      <input type="text" id=search_terms>
+      <select id=any_all>
+        <option value=0>Any</option>
+        <option value=1>All</option>
+      </select>
+      <button onclick="searchRecipes()" id=search_button>Search</button>
+    </div>
+    <div id=info_div>
+    Separate search terms with commas.
+    </div>
+  </div>  
+  <div id=results_div>
+  </div>
+  <div id=search_data>
+  </div>
+</body>
+</html>
