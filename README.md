@@ -1,6 +1,6 @@
 # BBC Recipe Web Scraper
 
-Warning: This script will create a folder with over 11,000 HTML files in it.
+:exclamation:**Warning: This script will create a folder with over 11,000 HTML files in it.**:exclamation:
 
 The BBC are planning on removing over 11,000 recipes from their website. This scraper will create a local repository of those recipes on your computer.
 
@@ -26,3 +26,4 @@ git clone https://github.com/Thomas-Rudge/BBC-Recipe-Web-Scraper.git
 cd BBC-Recipe-Web-Scraper
 python scrape_bbc_recipes.py
 ```
+I would recommend running it overnight as it will take a while.
