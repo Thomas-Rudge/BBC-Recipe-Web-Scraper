@@ -2,7 +2,7 @@
 ## WARNING ## WARNING ## WARNING ## WARNING ## WARNING ##
 ## This script will create a directory with over 11,000##
 ## html pages in the directory it is executed from!    ##
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 # Name:        BBC Food Recipes & Techniques
 # Purpose:     Grab all the recipes from the BBC food website and
 #              strip them down to basic html pages.
@@ -11,28 +11,47 @@
 # Created:     2016-5-17
 # Copyright:   (c) Thomas Edward Rudge 2016
 # Licence:     MIT
-#-------------------------------------------------------------------------------
+# -------------------------------------------------------------------------------
 
 
-import bs4, os, requests, time, json
+import bs4, os, requests, time
 
 
-def add_data_to_indexhtml(data):
+def remove_temp_data():
+    '''
+    Remove temporary files used during the process
+    '''
+    if os.path.isfile('bbc_sitemap.txt'):
+        os.remove('bbc_sitemap.txt')
+
+    if os.path.isfile('temp_data.txt'):
+        os.remove('temp_data.txt')
+
+
+def add_data_to_indexhtml():
     '''
     Add the search data to the search.html search_data div.
     '''
+    ## Check the necessary files are present.
     if not os.path.isfile('search.html'):
         raise Exception("Couldn't find the search.html file!")
+    elif not os.path.isfile('temp_data.txt'):
+        raise Exception("Couldn't find the temp_data.txt file!")
 
+    ## Get the search.html where the data will be inserted
     with open('search.html', 'r', encoding='utf-8') as f:
-        html_file = f.read()
+        html_data = f.read()
 
-    insertion_index = html_file.find('<div id=search_data>')
+    ## Get the index where the data should be inserted
+    insertion_index = html_data.find('<div id=search_data>')
 
-    with open('search.html', 'w', encoding='utf-8') as f:
-        f.write(html_file[:insertion_index + 20] +
-                data +
-                html_file[insertion_index + 20:])
+    ## Add the search data to the html file
+    ## The read data is sliced because the last character will be a delimiter
+    with open('temp_data.txt', 'r') as data_file:
+        with open('search.html', 'w', encoding='utf-8') as html_file:
+            html_file.write(html_data[:insertion_index + 20] +
+                            data_file.read()[:-1] +
+                            html_data[insertion_index + 20:])
 
 
 def get_sitemap():
@@ -51,13 +70,14 @@ def get_sitemap():
             page.raise_for_status()
             break
         except requests.RequestException:
-            time.sleep(attempt*10)
+            time.sleep(attempt * 10)
 
     if not page:
         raise Exception('Failed to get sitemap.xml')
 
     sitemap = bs4.BeautifulSoup(page.text, 'xml')
 
+    ## Write the recipe urls to a text file
     with open('bbc_sitemap.txt', 'w') as f:
         for line in sitemap.find_all('loc'):
             for string in line.stripped_strings:
@@ -69,11 +89,10 @@ def make_repodir():
     '''
     Make the repositories where the html and css files will be stored
     '''
-    ## Create the location where the CSS will be stored
     cwd = os.getcwd()
 
-    bbc_food_repo = os.path.join(cwd,'BBC_Food_Repo')
-    css_path      = os.path.join(bbc_food_repo, 'css')
+    bbc_food_repo = os.path.join(cwd, 'BBC_Food_Repo')
+    css_path = os.path.join(bbc_food_repo, 'css')
 
     try:
         if not os.path.isdir(bbc_food_repo):
@@ -88,7 +107,7 @@ def get_stylesheets():
     '''
     Get the stylesheets needed to display the pages properly.
     '''
-    ## Get the first URL from the sitemap (assume all the pages are the same)
+    ## Get the first URL from the sitemap (assume all the pages share styles)
     with open('bbc_sitemap.txt', 'r') as f:
         url = f.readline()
     url = url.strip('\n')
@@ -104,7 +123,7 @@ def get_stylesheets():
             page.raise_for_status()
             break
         except requests.RequestException:
-            time.sleep(attempt*10)
+            time.sleep(attempt * 10)
 
     if not page:
         raise Exception("Couldn't retrieve page: " + url)
@@ -126,7 +145,7 @@ def get_stylesheets():
         except requests.RequestException:
             continue
 
-        filepath = os.path.join('BBC_Food_Repo','css', link.split('/')[-1])
+        filepath = os.path.join('BBC_Food_Repo', 'css', link.split('/')[-1])
 
         with open(filepath, 'w') as css:
             css.write(sheet.text)
@@ -143,9 +162,10 @@ def save_pages(css_links):
     for i, link in enumerate(css_links):
         css_links[i] = os.path.join('css', link.split('/')[-1])
 
-    ## Create a list that contains each page and key information
-    search_data = ''
-    
+    ## Create a file that will hold each page and key information
+    with open('temp_data.txt', 'w') as f:
+        f.write('')
+
     ## Cycle through the sitemap grabbing each recipe
     with open('bbc_sitemap.txt', 'r') as f:
         for line in f.readlines():
@@ -159,7 +179,7 @@ def save_pages(css_links):
 
             soup = bs4.BeautifulSoup(page.text, 'lxml')
 
-            ## Update the JSON data
+            ## Update the data file
             data = [soup.find('h1', class_='content-title__text'),
                     '',
                     soup.find('div', class_='recipe-ingredients')
@@ -167,13 +187,14 @@ def save_pages(css_links):
 
             for i, datum in enumerate(data):
                 if data[i]:
-                    data[i] = datum.text.replace('\n','')
+                    data[i] = datum.text.replace('\n', '')
                 else:
                     data[i] = ''
 
-            search_data += line.split('/')[-1] + '~:]' + str(data)[1:-1].upper() + '~:]'
+            with open('temp_data.txt', 'a', encoding='utf-8') as tempfile:
+                tempfile.write(line.split('/')[-1] + '~:]' + str(data)[1:-1].upper() + '~:]')
 
-            ## Update the header
+            ## Update the head tag
             soup.head.clear()
             for link in css_links:
                 new_link = soup.new_tag('link')
@@ -223,14 +244,6 @@ def save_pages(css_links):
             filepath = os.path.join('BBC_Food_Repo', line.split('/')[-1] + '.html')
             with open(filepath, 'w', encoding='utf-8-sig') as html_page:
                 html_page.write(html)
-                
-    ## Remove the bbc sitemap
-    if os.path.isfile('bbc_sitemap.txt'):
-        os.remove('bbc_sitemap.txt')
-    ## Get rid of the last ~:]
-    search_data = search_data[:-3]
-
-    return search_data
 
 
 def main():
@@ -240,9 +253,11 @@ def main():
 
     stylesheets = get_stylesheets()
 
-    search_data = save_pages(stylesheets)
+    save_pages(stylesheets)
 
-    add_data_to_indexhtml(search_data)
+    add_data_to_indexhtml()
+
+    remove_temp_data()
 
 
 if __name__ == '__main__':
