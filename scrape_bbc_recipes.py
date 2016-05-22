@@ -47,10 +47,10 @@ def add_data_to_indexhtml():
 
     # Add the search data to the html file
     # The read data is sliced because the last character will be a delimiter
-    with open('temp_data.txt', 'r') as data_file:
+    with open('temp_data.txt', 'r', encoding='utf-8') as data_file:
         with open('search.html', 'w', encoding='utf-8') as html_file:
             html_file.write(html_data[:insertion_index + 20] +
-                            data_file.read()[:-1] +
+                            data_file.read()[:-3] +
                             html_data[insertion_index + 20:])
 
 
@@ -164,8 +164,9 @@ def save_pages(css_links):
         css_links[i] = os.path.join('css', link.split('/')[-1])
 
     # Create a file that will hold each page and key information
-    with open('temp_data.txt', 'w') as f:
-        f.write('')
+    if not os.path.isfile('temp_data.txt'):
+        with open('temp_data.txt', 'w') as f:
+            f.write('')
 
     # Cycle through the sitemap grabbing each recipe
     with open('bbc_sitemap.txt', 'r') as f:
