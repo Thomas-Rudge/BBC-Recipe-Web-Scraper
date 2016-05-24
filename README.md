@@ -28,4 +28,3 @@ git clone https://github.com/Thomas-Rudge/BBC-Recipe-Web-Scraper.git
 cd BBC-Recipe-Web-Scraper
 python scrape_bbc_recipes.py
 ```
-I would recommend running it overnight as it will take a while.
