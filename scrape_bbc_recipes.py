@@ -81,7 +81,7 @@ def get_sitemap():
     with open('bbc_sitemap.txt', 'w') as f:
         for line in sitemap.find_all('loc'):
             for string in line.stripped_strings:
-                if string.startswith('http://www.bbc.co.uk/food/recipes/'):
+                if string.startswith('https://www.bbc.co.uk/food/recipes/'):
                     f.write(string + '\n')
 
 
